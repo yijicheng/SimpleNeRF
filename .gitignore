@@ -24,3 +24,7 @@ runs/**/testing/test*/**/*.mp4
 runs/**/testing/test*/**/*.npy
 runs/**/testing/test*/**/*.npz
 tmp/
+
+src/prior_generators/sparse_depth/data/
+
+__pycache__/
