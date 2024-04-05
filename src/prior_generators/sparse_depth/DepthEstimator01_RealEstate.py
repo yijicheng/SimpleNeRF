@@ -57,7 +57,6 @@ def convert_images(
     return numpy.stack(numpy_images)
 
 def start_generation(split, chunk_s=None, chunk_e=None):
-    # root_dirpath = Path('../../../') # root
     root_dirpath = Path('./data') # root
     database_dirpath = root_dirpath / "RealEstate10K/re10k" # data
     tmp_dirpath = root_dirpath / 'tmp' # tmp
@@ -75,9 +74,12 @@ def start_generation(split, chunk_s=None, chunk_e=None):
 
     tester = Tester.ColmapTester(tmp_dirpath)
 
+    if split == "test" and (chunk_s is None or chunk_e is None):
+        chunk_s, chunk_e = 0, 542
+    if split == "train" and (chunk_s is None or chunk_e is None):
+        chunk_s, chunk_e = 0, 4865
 
-    # for scene_num in tqdm(scene_nums):
-    for chunk in tqdm(sorted(chunk_to_scene.keys())):
+    for chunk in tqdm(sorted(chunk_to_scene.keys())[chunk_s:chunk_e+1]):
         chunk_block = torch.load(database_dirpath / split / chunk)
         depth_chunk = {}
         depth_chunk_path = output_dirpath / chunk
@@ -110,54 +112,32 @@ def start_generation(split, chunk_s=None, chunk_e=None):
             depth_chunk[scene["key"]] = {"depth": depth_data_list, "bounds": bounds_data}
 
         torch.save(depth_chunk, depth_chunk_path)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
             
     return
 
 
-def demo1():
-    """
-    For a gen set
-    :return:
-    """
-
-    start_generation("test")
-
-    # gen_configs = {
-    #     'generator': this_filename,
-    #     'gen_num': 3,
-    #     'gen_set_num': 3,
-    #     'database_name': 'RealEstate10K',
-    #     'database_dirpath': 'RealEstate10K/data',
-    # }
-    # start_generation(gen_configs)
-
-    # gen_configs = {
-    #     'generator': this_filename,
-    #     'gen_num': 4,
-    #     'gen_set_num': 4,
-    #     'database_name': 'RealEstate10K',
-    #     'database_dirpath': 'RealEstate10K/data',
-    # }
-    # start_generation(gen_configs)
-    return
-
-
-def main():
-    demo1()
-    return
-
-
 if __name__ == '__main__':
+    import sys
     print('Program started at ' + datetime.datetime.now().strftime('%d/%m/%Y %I:%M:%S %p'))
     start_time = time.time()
-    # try:
-    main()
-    run_result = 'Program completed successfully!'
-    # except Exception as e:
-    #     print(e)
-    #     traceback.print_exc()
-    #     run_result = 'Error: ' + str(e)
-    # end_time = time.time()
-    # print('Program ended at ' + datetime.datetime.now().strftime('%d/%m/%Y %I:%M:%S %p'))
-    # print('Execution time: ' + str(datetime.timedelta(seconds=end_time - start_time)))
+    try:
+        # main()
+        # start_generation("train") #  [0, 4865]
+        # start_generation("test") # [0, 542]
+        split = str(sys.argv[1])
+        if len(sys.argv) > 2:
+            chunk_s = int(sys.argv[2])
+            chunk_e = int(sys.argv[3])
+        else:
+            chunk_s, chunk_e = None, None
+        assert split in ["train", "test"]
+        start_generation(split, chunk_s, chunk_e)
+        run_result = 'Program completed successfully!'
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        run_result = 'Error: ' + str(e)
+    end_time = time.time()
+    print('Program ended at ' + datetime.datetime.now().strftime('%d/%m/%Y %I:%M:%S %p'))
+    print('Execution time: ' + str(datetime.timedelta(seconds=end_time - start_time)))
